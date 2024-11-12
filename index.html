@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Devis/Facture Générateur</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to right, #f0f7ff, #e0e7ff);
+        }
+        h2 {
+            font-size: 22px;
+            color: #003d99;
+            border-bottom: 2px solid #003d99;
+            padding-bottom: 5px;
+            margin-top: 30px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .section:hover {
+            transform: scale(1.02);
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"], select {
+            width: calc(100% - 170px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .save-btn {
+            display: inline-block;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h2>Informations de l'utilisateur</h2>
+        <div>
+            <label>Nom de l'entreprise:</label>
+            <input type="text" id="user_name">
+        </div>
+        <div>
+            <label>Adresse:</label>
+            <input type="text" id="user_address">
+        </div>
+        <div>
+            <label>Téléphone:</label>
+            <input type="text" id="user_phone">
+        </div>
+        <div>
+            <label>Email:</label>
+            <input type="text" id="user_email">
+        </div>
+        <div>
+            <label>SIRET:</label>
+            <input type="text" id="user_siret">
+        </div>
+        <button class="save-btn" onclick="saveUserInfo()">Sauvegarder</button>
+    </div>
+
+    <div class="section">
+        <h2>Informations du document</h2>
+        <div>
+            <label>Type:</label>
+            <select id="document_type" onchange="toggleInvoiceNumber()">
+                <option value="Devis">Devis</option>
+                <option value="Facture">Facture</option>
+            </select>
+        </div>
+        <div id="invoice_number_section" style="display: none;">
+            <label>Numéro de facture:</label>
+            <input type="text" id="document_number">
+        </div>
+        <div>
+            <label>Nom du document:</label>
+            <input type="text" id="document_name" placeholder="Devis ou Facture">
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Informations du client</h2>
+        <div class="client-info">
+            <label>Nom:</label>
+            <input type="text" id="client_name">
+        </div>
+        <div class="client-info">
+            <label>Adresse:</label>
+            <input type="text" id="client_address">
+        </div>
+        <div class="client-info">
+            <label>Email:</label>
+            <input type="text" id="client_email">
+        </div>
+        <div class="client-info">
+            <label>Téléphone:</label>
+            <input type="text" id="client_phone">
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Articles</h2>
+        <div id="articles">
+            <div class="article">
+                <label>Description:</label>
+                <input type="text" class="description">
+                <label>Quantité:</label>
+                <input type="number" class="quantity" onchange="updateTotals()">
+                <label>Prix HT:</label>
+                <input type="number" step="0.01" class="price_ht" onchange="updateTotals()">
+                <label>TVA (%):</label>
+                <input type="number" step="0.01" class="tva" value="20" onchange="updateTotals()">
+                <label>Montant HT:</label>
+                <input type="number" step="0.01" class="amount_ht" readonly>
+                <label>Montant TTC:</label>
+                <input type="number" step="0.01" class="amount_ttc" readonly>
+            </div>
+        </div>
+        <button onclick="addArticle()">Ajouter un article</button>
+    </div>
+
+    <h3>Total HT : <span id="total_ht">0.00</span> €</h3>
+    <h2>Total TTC : <span id="total_ttc" style="color: #003d99; font-size: 16pt;">0.00</span> €</h2>
+    <button onclick="generatePDF()">Générer PDF</button>
+
+    <script>
+
+        function toggleInvoiceNumber() {
+            const type = document.getElementById("document_type").value;
+            document.getElementById("invoice_number_section").style.display = type === "Facture" ? "block" : "none";
+        }
+        function addArticle() {
+            const articlesDiv = document.getElementById("articles");
+            const newArticle = document.createElement("div");
+            newArticle.classList.add("article");
+            newArticle.innerHTML = `
+                <label>Description: <input type="text" class="description"></label>
+                <label>Quantité: <input type="number" class="quantity" onchange="updateTotals()"></label>
+                <label>Prix HT: <input type="number" step="0.01" class="price_ht" onchange="updateTotals()"></label>
+                <label>TVA (%): <input type="number" step="0.01" class="tva" value="20" onchange="updateTotals()"></label>
+                <label>Montant HT: <input type="number" step="0.01" class="amount_ht" readonly></label>
+                <label>Montant TTC: <input type="number" step="0.01" class="amount_ttc" readonly></label>
+            `;
+            articlesDiv.appendChild(newArticle);
+        }
+
+        function updateTotals() {
+            const articles = document.querySelectorAll('.article');
+            let totalHT = 0;
+            let totalTTC = 0;
+
+            articles.forEach(article => {
+                const quantity = parseFloat(article.querySelector('.quantity').value) || 0;
+                const priceHT = parseFloat(article.querySelector('.price_ht').value) || 0;
+                const tvaRate = parseFloat(article.querySelector('.tva').value) || 0;
+
+                const amountHT = quantity * priceHT;
+                const amountTTC = amountHT * (1 + tvaRate / 100);
+                article.querySelector('.amount_ht').value = amountHT.toFixed(2);
+                article.querySelector('.amount_ttc').value = amountTTC.toFixed(2);
+
+                totalHT += amountHT;
+                totalTTC += amountTTC;
+            });
+
+            document.getElementById("total_ht").innerText = totalHT.toFixed(2);
+            document.getElementById("total_ttc").innerText = totalTTC.toFixed(2);
+        }
+
+        function generatePDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Ligne supérieure et inférieure
+    doc.setDrawColor(31, 75, 153);
+    doc.setLineWidth(1);
+    doc.line(10, 10, 200, 10); // Ligne en haut
+    doc.line(10, 287, 200, 287); // Ligne en bas
+
+    // Date actuelle
+    const currentDate = new Date().toLocaleDateString("fr-FR");
+    doc.setFontSize(10);
+    doc.text(`Date: ${currentDate}`, 160, 15);
+
+    // Titre du document : "Devis" ou "Facture" + numéro de facture (si ajouté)
+    const documentType = document.getElementById("document_type").value; // Type du document
+    const documentName = document.getElementById("document_name").value; // Nom ou description du document
+    const documentNumber = document.getElementById("document_number").value; // Numéro de facture ou devis
+
+    // Titre principal du document, incluant le type, numéro et nom si spécifiés
+    let titleText = documentNumber 
+        ? `${documentType} N° ${documentNumber}` 
+        : documentType;
+    titleText += documentName ? ` - ${documentName}` : "";
+
+    // Afficher le titre principal avec taille de police réduite si documentName est fourni
+    doc.setFontSize(14);
+    doc.setFont("Helvetica", "bold");
+    doc.text(titleText, 10, 20);
+
+    // Informations de l'entreprise
+    doc.setFontSize(12);
+    doc.setFont("Helvetica", "bold");
+    const userName = document.getElementById("user_name").value;
+    doc.text(userName, 10, 30);
+    const userAddress = document.getElementById("user_address").value;
+    doc.text(userAddress, 10, 35);
+    const userSiret = document.getElementById("user_siret").value;
+    doc.text(`Siret: ${userSiret}`, 10, 40);
+    const userPhone = document.getElementById("user_phone").value;
+    if (userPhone) doc.text(`Téléphone: ${userPhone}`, 10, 45);
+    const userEmail = document.getElementById("user_email").value;
+    if (userEmail) doc.text(`Email: ${userEmail}`, 10, 50);
+
+    // Informations du client
+    const clientX = 105;
+    const clientY = 30;
+    const clientWidth = 95;
+    const clientHeight = 25;
+    doc.setDrawColor(31, 75, 153);
+    doc.setLineWidth(0.5);
+    doc.rect(clientX, clientY, clientWidth, clientHeight);
+
+    doc.setFont("Helvetica", "normal");
+    const clientName = document.getElementById("client_name").value;
+    doc.text(`Client: ${clientName}`, clientX + 2, clientY + 5);
+    const clientAddress = document.getElementById("client_address").value;
+    doc.text(`Adresse: ${clientAddress}`, clientX + 2, clientY + 10);
+    const clientEmail = document.getElementById("client_email").value;
+    if (clientEmail) doc.text(`Email: ${clientEmail}`, clientX + 2, clientY + 15);
+    const clientPhone = document.getElementById("client_phone").value;
+    if (clientPhone) doc.text(`Téléphone: ${clientPhone}`, clientX + 2, clientY + 20);
+
+    // Tableau des articles
+    let yPosition = clientY + clientHeight + 10;
+    doc.setFontSize(10);
+    doc.setFont("Helvetica", "normal");
+
+    // Entête du tableau
+    doc.setFillColor(31, 75, 153);
+    doc.rect(10, yPosition, 190, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.text("Description", 10, yPosition + 7);
+    doc.text("Quantité", 60, yPosition + 7);
+    doc.text("Prix HT", 90, yPosition + 7);
+    doc.text("TVA", 120, yPosition + 7);
+    doc.text("Montant HT", 150, yPosition + 7);
+    doc.text("Montant TTC", 170, yPosition + 7);
+
+    yPosition += 15;
+    const articles = document.querySelectorAll('.article');
+    articles.forEach(article => {
+        const description = article.querySelector('.description').value;
+        const quantity = article.querySelector('.quantity').value;
+        const priceHT = article.querySelector('.price_ht').value;
+        const tva = article.querySelector('.tva').value;
+        const amountHT = article.querySelector('.amount_ht').value;
+        const amountTTC = article.querySelector('.amount_ttc').value;
+
+        const maxCharsPerLine = 25;
+        let descriptionLines = [];
+        let currentLine = "";
+        for (let i = 0; i < description.length; i++) {
+            currentLine += description[i];
+            if (currentLine.length >= maxCharsPerLine) {
+                descriptionLines.push(currentLine);
+                currentLine = "";
+            }
+        }
+        if (currentLine.length > 0) {
+            descriptionLines.push(currentLine);
+        }
+
+        doc.setTextColor(0, 0, 0);
+
+        descriptionLines.forEach((line, index) => {
+            doc.text(line, 10, yPosition + (index * 5));
+        });
+
+        doc.text(quantity, 60, yPosition);
+        doc.text(priceHT + " €", 90, yPosition);
+        doc.text(tva + " %", 120, yPosition);
+        doc.text(amountHT + " €", 150, yPosition);
+        doc.text(amountTTC + " €", 170, yPosition);
+
+        yPosition += (descriptionLines.length * 3) + 10;
+    });
+
+    // Tableau des totaux
+    doc.setFontSize(12);
+    doc.text(`Total HT : ${document.getElementById("total_ht").innerText} €`, 10, yPosition + 10);
+    doc.setTextColor(31, 75, 153);
+    doc.setFontSize(14);
+    doc.text(`Total TTC : ${document.getElementById("total_ttc").innerText} €`, 10, yPosition + 20);
+
+    // Enregistrer le PDF avec le titre
+    doc.save(`${titleText}.pdf`);
+}
+
+
+        
+        // Fonction pour sauvegarder les informations de l'entreprise
+        function saveUserInfo() {
+            const userInfo = {
+                name: document.getElementById("user_name").value,
+                address: document.getElementById("user_address").value,
+                phone: document.getElementById("user_phone").value,
+                email: document.getElementById("user_email").value,
+                siret: document.getElementById("user_siret").value
+            };
+            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+            alert("Informations sauvegardées !");
+            }
+
+        function loadUserInfo() {
+            const savedUserInfo = localStorage.getItem('userInfo');
+            if (savedUserInfo) {
+                const userInfo = JSON.parse(savedUserInfo);
+                document.getElementById("user_name").value = userInfo.name;
+                document.getElementById("user_address").value = userInfo.address;
+                document.getElementById("user_phone").value = userInfo.phone;
+                document.getElementById("user_email").value = userInfo.email;
+                document.getElementById("user_siret").value = userInfo.siret;
+            }
+        }
+
+        window.onload = loadUserInfo;
+    </script>
+</body>
+</html>

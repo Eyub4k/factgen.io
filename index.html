@@ -60,6 +60,17 @@
             display: inline-block;
             margin-left: 5px;
         }
+        .article {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .article label {
+            flex: 0 0 150px;
+        }
+        .article input {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -158,17 +169,24 @@
             const type = document.getElementById("document_type").value;
             document.getElementById("invoice_number_section").style.display = type === "Facture" ? "block" : "none";
         }
+
         function addArticle() {
             const articlesDiv = document.getElementById("articles");
             const newArticle = document.createElement("div");
             newArticle.classList.add("article");
             newArticle.innerHTML = `
-                <label>Description: <input type="text" class="description"></label>
-                <label>Quantité: <input type="number" class="quantity" onchange="updateTotals()"></label>
-                <label>Prix HT: <input type="number" step="0.01" class="price_ht" onchange="updateTotals()"></label>
-                <label>TVA (%): <input type="number" step="0.01" class="tva" value="20" onchange="updateTotals()"></label>
-                <label>Montant HT: <input type="number" step="0.01" class="amount_ht" readonly></label>
-                <label>Montant TTC: <input type="number" step="0.01" class="amount_ttc" readonly></label>
+                <label>Description:</label>
+                <input type="text" class="description">
+                <label>Quantité:</label>
+                <input type="number" class="quantity" onchange="updateTotals()">
+                <label>Prix HT:</label>
+                <input type="number" step="0.01" class="price_ht" onchange="updateTotals()">
+                <label>TVA (%):</label>
+                <input type="number" step="0.01" class="tva" value="20" onchange="updateTotals()">
+                <label>Montant HT:</label>
+                <input type="number" step="0.01" class="amount_ht" readonly>
+                <label>Montant TTC:</label>
+                <input type="number" step="0.01" class="amount_ttc" readonly>
             `;
             articlesDiv.appendChild(newArticle);
         }
@@ -197,137 +215,135 @@
         }
 
         function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
 
-    // Ligne supérieure et inférieure
-    doc.setDrawColor(31, 75, 153);
-    doc.setLineWidth(1);
-    doc.line(10, 10, 200, 10); // Ligne en haut
-    doc.line(10, 287, 200, 287); // Ligne en bas
+            // Ligne supérieure et inférieure
+            doc.setDrawColor(31, 75, 153);
+            doc.setLineWidth(1);
+            doc.line(10, 10, 200, 10); // Ligne en haut
+            doc.line(10, 287, 200, 287); // Ligne en bas
 
-    // Date actuelle
-    const currentDate = new Date().toLocaleDateString("fr-FR");
-    doc.setFontSize(10);
-    doc.text(`Date: ${currentDate}`, 160, 15);
+            // Date actuelle
+            const currentDate = new Date().toLocaleDateString("fr-FR");
+            doc.setFontSize(10);
+            doc.text(`Date: ${currentDate}`, 160, 15);
 
-    // Titre du document : "Devis" ou "Facture" + numéro de facture (si ajouté)
-    const documentType = document.getElementById("document_type").value; // Type du document
-    const documentName = document.getElementById("document_name").value; // Nom ou description du document
-    const documentNumber = document.getElementById("document_number").value; // Numéro de facture ou devis
+            // Titre du document : "Devis" ou "Facture" + numéro de facture (si ajouté)
+            const documentType = document.getElementById("document_type").value; // Type du document
+            const documentName = document.getElementById("document_name").value; // Nom ou description du document
+            const documentNumber = document.getElementById("document_number").value; // Numéro de facture ou devis
 
-    // Titre principal du document, incluant le type, numéro et nom si spécifiés
-    let titleText = documentNumber 
-        ? `${documentType} N° ${documentNumber}` 
-        : documentType;
-    titleText += documentName ? ` - ${documentName}` : "";
+            // Titre principal du document, incluant le type, numéro et nom si spécifiés
+            let titleText = documentNumber 
+                ? `${documentType} N° ${documentNumber}` 
+                : documentType;
+            titleText += documentName ? ` - ${documentName}` : "";
 
-    // Afficher le titre principal avec taille de police réduite si documentName est fourni
-    doc.setFontSize(14);
-    doc.setFont("Helvetica", "bold");
-    doc.text(titleText, 10, 20);
+            // Afficher le titre principal avec taille de police réduite si documentName est fourni
+            doc.setFontSize(14);
+            doc.setFont("Helvetica", "bold");
+            doc.text(titleText, 10, 20);
 
-    // Informations de l'entreprise
-    doc.setFontSize(12);
-    doc.setFont("Helvetica", "bold");
-    const userName = document.getElementById("user_name").value;
-    doc.text(userName, 10, 30);
-    const userAddress = document.getElementById("user_address").value;
-    doc.text(userAddress, 10, 35);
-    const userSiret = document.getElementById("user_siret").value;
-    doc.text(`Siret: ${userSiret}`, 10, 40);
-    const userPhone = document.getElementById("user_phone").value;
-    if (userPhone) doc.text(`Téléphone: ${userPhone}`, 10, 45);
-    const userEmail = document.getElementById("user_email").value;
-    if (userEmail) doc.text(`Email: ${userEmail}`, 10, 50);
+            // Informations de l'entreprise
+            doc.setFontSize(12);
+            doc.setFont("Helvetica", "bold");
+            const userName = document.getElementById("user_name").value;
+            doc.text(userName, 10, 30);
+            const userAddress = document.getElementById("user_address").value;
+            doc.text(userAddress, 10, 35);
+            const userSiret = document.getElementById("user_siret").value;
+            doc.text(`Siret: ${userSiret}`, 10, 40);
+            const userPhone = document.getElementById("user_phone").value;
+            if (userPhone) doc.text(`Téléphone: ${userPhone}`, 10, 45);
+            const userEmail = document.getElementById("user_email").value;
+            if (userEmail) doc.text(`Email: ${userEmail}`, 10, 50);
 
-    // Informations du client
-    const clientX = 105;
-    const clientY = 30;
-    const clientWidth = 95;
-    const clientHeight = 25;
-    doc.setDrawColor(31, 75, 153);
-    doc.setLineWidth(0.5);
-    doc.rect(clientX, clientY, clientWidth, clientHeight);
+            // Informations du client
+            const clientX = 105;
+            const clientY = 30;
+            const clientWidth = 95;
+            const clientHeight = 25;
+            doc.setDrawColor(31, 75, 153);
+            doc.setLineWidth(0.5);
+            doc.rect(clientX, clientY, clientWidth, clientHeight);
 
-    doc.setFont("Helvetica", "normal");
-    const clientName = document.getElementById("client_name").value;
-    doc.text(`Client: ${clientName}`, clientX + 2, clientY + 5);
-    const clientAddress = document.getElementById("client_address").value;
-    doc.text(`Adresse: ${clientAddress}`, clientX + 2, clientY + 10);
-    const clientEmail = document.getElementById("client_email").value;
-    if (clientEmail) doc.text(`Email: ${clientEmail}`, clientX + 2, clientY + 15);
-    const clientPhone = document.getElementById("client_phone").value;
-    if (clientPhone) doc.text(`Téléphone: ${clientPhone}`, clientX + 2, clientY + 20);
+            doc.setFont("Helvetica", "normal");
+            const clientName = document.getElementById("client_name").value;
+            doc.text(`Client: ${clientName}`, clientX + 2, clientY + 5);
+            const clientAddress = document.getElementById("client_address").value;
+            doc.text(`Adresse: ${clientAddress}`, clientX + 2, clientY + 10);
+            const clientEmail = document.getElementById("client_email").value;
+            if (clientEmail) doc.text(`Email: ${clientEmail}`, clientX + 2, clientY + 15);
+            const clientPhone = document.getElementById("client_phone").value;
+            if (clientPhone) doc.text(`Téléphone: ${clientPhone}`, clientX + 2, clientY + 20);
 
-    // Tableau des articles
-    let yPosition = clientY + clientHeight + 10;
-    doc.setFontSize(10);
-    doc.setFont("Helvetica", "normal");
+            // Tableau des articles
+            let yPosition = clientY + clientHeight + 10;
+            doc.setFontSize(10);
+            doc.setFont("Helvetica", "normal");
 
-    // Entête du tableau
-    doc.setFillColor(31, 75, 153);
-    doc.rect(10, yPosition, 190, 10, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.text("Description", 10, yPosition + 7);
-    doc.text("Quantité", 60, yPosition + 7);
-    doc.text("Prix HT", 90, yPosition + 7);
-    doc.text("TVA", 120, yPosition + 7);
-    doc.text("Montant HT", 150, yPosition + 7);
-    doc.text("Montant TTC", 170, yPosition + 7);
+            // Entête du tableau
+            doc.setFillColor(31, 75, 153);
+            doc.rect(10, yPosition, 190, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text("Description", 10, yPosition + 7);
+            doc.text("Quantité", 60, yPosition + 7);
+            doc.text("Prix HT", 90, yPosition + 7);
+            doc.text("TVA", 120, yPosition + 7);
+            doc.text("Montant HT", 150, yPosition + 7);
+            doc.text("Montant TTC", 170, yPosition + 7);
 
-    yPosition += 15;
-    const articles = document.querySelectorAll('.article');
-    articles.forEach(article => {
-        const description = article.querySelector('.description').value;
-        const quantity = article.querySelector('.quantity').value;
-        const priceHT = article.querySelector('.price_ht').value;
-        const tva = article.querySelector('.tva').value;
-        const amountHT = article.querySelector('.amount_ht').value;
-        const amountTTC = article.querySelector('.amount_ttc').value;
+            yPosition += 15;
+            const articles = document.querySelectorAll('.article');
+            articles.forEach(article => {
+                const description = article.querySelector('.description').value;
+                const quantity = article.querySelector('.quantity').value;
+                const priceHT = article.querySelector('.price_ht').value;
+                const tva = article.querySelector('.tva').value;
+                const amountHT = article.querySelector('.amount_ht').value;
+                const amountTTC = article.querySelector('.amount_ttc').value;
 
-        const maxCharsPerLine = 25;
-        let descriptionLines = [];
-        let currentLine = "";
-        for (let i = 0; i < description.length; i++) {
-            currentLine += description[i];
-            if (currentLine.length >= maxCharsPerLine) {
-                descriptionLines.push(currentLine);
-                currentLine = "";
-            }
+                const maxCharsPerLine = 25;
+                let descriptionLines = [];
+                let currentLine = "";
+                for (let i = 0; i < description.length; i++) {
+                    currentLine += description[i];
+                    if (currentLine.length >= maxCharsPerLine) {
+                        descriptionLines.push(currentLine);
+                        currentLine = "";
+                    }
+                }
+                if (currentLine.length > 0) {
+                    descriptionLines.push(currentLine);
+                }
+
+                doc.setTextColor(0, 0, 0);
+
+                descriptionLines.forEach((line, index) => {
+                    doc.text(line, 10, yPosition + (index * 5));
+                });
+
+                doc.text(quantity, 60, yPosition);
+                doc.text(priceHT + " €", 90, yPosition);
+                doc.text(tva + " %", 120, yPosition);
+                doc.text(amountHT + " €", 150, yPosition);
+                doc.text(amountTTC + " €", 170, yPosition);
+
+                yPosition += (descriptionLines.length * 3) + 10;
+            });
+
+            // Tableau des totaux
+            doc.setFontSize(12);
+            doc.text(`Total HT : ${document.getElementById("total_ht").innerText} €`, 10, yPosition + 10);
+            doc.setTextColor(31, 75, 153);
+            doc.setFontSize(14);
+            doc.text(`Total TTC : ${document.getElementById("total_ttc").innerText} €`, 10, yPosition + 20);
+
+            // Enregistrer le PDF avec le titre
+            doc.save(`${titleText}.pdf`);
         }
-        if (currentLine.length > 0) {
-            descriptionLines.push(currentLine);
-        }
 
-        doc.setTextColor(0, 0, 0);
-
-        descriptionLines.forEach((line, index) => {
-            doc.text(line, 10, yPosition + (index * 5));
-        });
-
-        doc.text(quantity, 60, yPosition);
-        doc.text(priceHT + " €", 90, yPosition);
-        doc.text(tva + " %", 120, yPosition);
-        doc.text(amountHT + " €", 150, yPosition);
-        doc.text(amountTTC + " €", 170, yPosition);
-
-        yPosition += (descriptionLines.length * 3) + 10;
-    });
-
-    // Tableau des totaux
-    doc.setFontSize(12);
-    doc.text(`Total HT : ${document.getElementById("total_ht").innerText} €`, 10, yPosition + 10);
-    doc.setTextColor(31, 75, 153);
-    doc.setFontSize(14);
-    doc.text(`Total TTC : ${document.getElementById("total_ttc").innerText} €`, 10, yPosition + 20);
-
-    // Enregistrer le PDF avec le titre
-    doc.save(`${titleText}.pdf`);
-}
-
-
-        
         // Fonction pour sauvegarder les informations de l'entreprise
         function saveUserInfo() {
             const userInfo = {
@@ -339,7 +355,7 @@
             };
             localStorage.setItem('userInfo', JSON.stringify(userInfo));
             alert("Informations sauvegardées !");
-            }
+        }
 
         function loadUserInfo() {
             const savedUserInfo = localStorage.getItem('userInfo');

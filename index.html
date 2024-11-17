@@ -245,38 +245,65 @@
             doc.setFont("Helvetica", "bold");
             doc.text(titleText, 10, 20);
 
-            // Informations de l'entreprise
+            const maxWidth = 80; // Largeur maximale pour les adresses longues
             doc.setFontSize(12);
             doc.setFont("Helvetica", "bold");
+
+            // Informations de l'entreprise
             const userName = document.getElementById("user_name").value;
             doc.text(userName, 10, 30);
+
             const userAddress = document.getElementById("user_address").value;
-            doc.text(userAddress, 10, 35);
+            const splitUserAddress = doc.splitTextToSize(userAddress, maxWidth);
+            doc.text(splitUserAddress, 10, 35);
+
             const userSiret = document.getElementById("user_siret").value;
-            doc.text(`Siret: ${userSiret}`, 10, 40);
-            const userPhone = document.getElementById("user_phone").value;
-            if (userPhone) doc.text(`Téléphone: ${userPhone}`, 10, 45);
+            doc.text(`SIRET: ${userSiret}`, 10, 40 + splitUserAddress.length * 4);
+
             const userEmail = document.getElementById("user_email").value;
-            if (userEmail) doc.text(`Email: ${userEmail}`, 10, 50);
+            if (userEmail) {
+                doc.text(`Email: ${userEmail}`, 10, 45 + splitUserAddress.length * 4);
+            }
 
             // Informations du client
             const clientX = 105;
             const clientY = 30;
             const clientWidth = 95;
-            const clientHeight = 25;
+
+            // Préparer les informations du client
+            doc.setFont("Helvetica", "normal");
+            const clientName = document.getElementById("client_name").value;
+            const clientAddress = document.getElementById("client_address").value;
+            const clientEmail = document.getElementById("client_email").value;
+
+            // Largeur maximale pour éviter que l'adresse dépasse
+            const maxClientWidth = 85;
+            const splitClientAddress = doc.splitTextToSize(clientAddress, maxClientWidth);
+
+            // Calcul de la hauteur totale du cadre
+            let clientHeight = 20 + (splitClientAddress.length * 5); // Hauteur pour le nom + adresse
+            if (clientEmail) {
+                clientHeight += 10; // Ajouter de l'espace pour l'email
+            }
+
+            // Dessiner le cadre avec la hauteur dynamique
             doc.setDrawColor(31, 75, 153);
             doc.setLineWidth(0.5);
             doc.rect(clientX, clientY, clientWidth, clientHeight);
 
-            doc.setFont("Helvetica", "normal");
-            const clientName = document.getElementById("client_name").value;
+            // Ajouter les informations à l'intérieur du cadre
             doc.text(`Client: ${clientName}`, clientX + 2, clientY + 5);
-            const clientAddress = document.getElementById("client_address").value;
-            doc.text(`Adresse: ${clientAddress}`, clientX + 2, clientY + 10);
-            const clientEmail = document.getElementById("client_email").value;
-            if (clientEmail) doc.text(`Email: ${clientEmail}`, clientX + 2, clientY + 15);
-            const clientPhone = document.getElementById("client_phone").value;
-            if (clientPhone) doc.text(`Téléphone: ${clientPhone}`, clientX + 2, clientY + 20);
+            doc.text(`Adresse:`, clientX + 2, clientY + 10);
+            doc.text(splitClientAddress, clientX + 10, clientY + 15);
+
+            // Positionner l'email avec un espace entre l'adresse et la bordure inférieure
+            if (clientEmail) {
+                const emailYPosition = clientY + 15 + splitClientAddress.length * 5 + 5; // Ajuster l'email sous l'adresse
+                doc.text(`Email: ${clientEmail}`, clientX + 2, emailYPosition);
+            }
+
+
+
 
             // Tableau des articles
             let yPosition = clientY + clientHeight + 10;
